@@ -595,8 +595,9 @@ static int send_fin(struct libsoccr_sk *sk, struct libsoccr_sk_data *data, unsig
 	libnet_t *l;
 
 	family = sk->dst_addr->sa.sa_family;
+	int is_ipv4_map_ipv6 = (family == AF_INET6 && ipv6_addr_mapped(sk->dst_addr));
 
-	if (family == AF_INET6 && ipv6_addr_mapped(sk->dst_addr)) {
+	if (is_ipv4_map_ipv6) {
 		/* TCP over IPv4 */
 		family = AF_INET;
 		dst_v4 = sk->dst_addr->v6.sin6_addr.s6_addr32[3];
@@ -621,19 +622,35 @@ static int send_fin(struct libsoccr_sk *sk, struct libsoccr_sk_data *data, unsig
 		goto err;
 	}
 
-	ret = libnet_build_tcp(ntohs(sk->dst_addr->v4.sin_port), /* source port */
-			       ntohs(sk->src_addr->v4.sin_port), /* destination port */
-			       data->inq_seq,			 /* sequence number */
-			       data->outq_seq - data->outq_len,	 /* acknowledgement num */
-			       flags,				 /* control flags */
-			       data->rcv_wnd,			 /* window size */
-			       0,				 /* checksum */
-			       10,				 /* urgent pointer */
-			       LIBNET_TCP_H + 20,		 /* TCP packet size */
-			       NULL,				 /* payload */
-			       0,				 /* payload size */
-			       l,				 /* libnet handle */
-			       0);				 /* libnet id */
+	if (is_ipv4_map_ipv6) {
+		ret = libnet_build_tcp(ntohs(sk->dst_addr->v6.sin6_port), /* source port */
+				       ntohs(sk->src_addr->v6.sin6_port), /* destination port */
+				       data->inq_seq,			 /* sequence number */
+				       data->outq_seq - data->outq_len,	 /* acknowledgement num */
+				       flags,				 /* control flags */
+				       data->rcv_wnd,			 /* window size */
+				       0,				 /* checksum */
+				       10,				 /* urgent pointer */
+				       LIBNET_TCP_H + 20,		 /* TCP packet size */
+				       NULL,				 /* payload */
+				       0,				 /* payload size */
+				       l,				 /* libnet handle */
+				       0);				 /* libnet id */
+	} else {
+		ret = libnet_build_tcp(ntohs(sk->dst_addr->v4.sin_port), /* source port */
+				       ntohs(sk->src_addr->v4.sin_port), /* destination port */
+				       data->inq_seq,			 /* sequence number */
+				       data->outq_seq - data->outq_len,	 /* acknowledgement num */
+				       flags,				 /* control flags */
+				       data->rcv_wnd,			 /* window size */
+				       0,				 /* checksum */
+				       10,				 /* urgent pointer */
+				       LIBNET_TCP_H + 20,		 /* TCP packet size */
+				       NULL,				 /* payload */
+				       0,				 /* payload size */
+				       l,				 /* libnet handle */
+				       0);				 /* libnet id */
+	}
 	if (ret == -1) {
 		loge("Can't build TCP header: %s\n", libnet_geterror(l));
 		goto err;
