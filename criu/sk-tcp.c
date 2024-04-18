@@ -372,6 +372,9 @@ static int restore_tcp_conn_state(int sk, struct libsoccr_sk *socr, struct inet_
 		data.rcv_wup = tse->rcv_wup;
 	}
 
+	pr_info("restore_sockaddr id:%s src_addr:(%s) src_prot:(%s) dst_addr(%s) dst_port:(%s)\n",
+		ii->ie->id, ii->ie->src_addr, ii->ie->src_port, ii->ie->dst_addr, ii->ie->dst_port);
+
 	if (restore_sockaddr(&sa_src, ii->ie->family, ii->ie->src_port, ii->ie->src_addr, 0) < 0)
 		goto err_c;
 	if (restore_sockaddr(&sa_dst, ii->ie->family, ii->ie->dst_port, ii->ie->dst_addr, 0) < 0)
