@@ -603,8 +603,8 @@ static int send_fin(struct libsoccr_sk *sk, struct libsoccr_sk_data *data, unsig
 		family = AF_INET;
 		dst_v4 = sk->dst_addr->v6.sin6_addr.s6_addr32[3];
 		src_v4 = sk->src_addr->v6.sin6_addr.s6_addr32[3];
-		logd("IPv4-mapped IPv6 address src_v4 prot:(%hu)  dst_v4 prot:(%hu) \n",sk->src_addr->v6.sin6_port, sk->dst_addr->v6.sin6_port);
-		logd("IPv4-mapped IPv4 address src_v4 prot:(%hu)  dst_v4 prot:(%hu) \n",sk->src_addr->v4.sin_port, sk->dst_addr->v4.sin_port);
+		loge("IPv4-mapped IPv6 address src_v4 prot:(%hu)  dst_v4 prot:(%hu) \n",sk->src_addr->v6.sin6_port, sk->dst_addr->v6.sin6_port);
+		loge("IPv4-mapped IPv4 address src_v4 prot:(%hu)  dst_v4 prot:(%hu) \n",sk->src_addr->v4.sin_port, sk->dst_addr->v4.sin_port);
 	}
 
 	if (family == AF_INET6)
