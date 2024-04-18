@@ -6,7 +6,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
-#include <arpa/inet.h>
 #include "soccr.h"
 
 #ifndef SIOCOUTQNSD
@@ -610,9 +609,9 @@ static int send_fin(struct libsoccr_sk *sk, struct libsoccr_sk_data *data, unsig
 		     sk->dst_addr->v4.sin_port);
 	}
 
-	loge("IPv4-mapped IPv6 address src_v6:(%s) prot:(%hu)  dst_v6:(%s) prot:(%hu) \n",inet_ntoa(htonl(src_v4)), sk->src_addr->v6.sin6_port,inet_ntoa(htonl(dst_v4)),
+	loge("IPv4-mapped IPv6 address src_v6:(%u) prot:(%hu)  dst_v6:(%u) prot:(%hu) \n",src_v4, sk->src_addr->v6.sin6_port,dst_v4,
 	     sk->dst_addr->v6.sin6_port);
-	loge("IPv4-mapped IPv4 address src_v4:(%s) prot:(%hu)  dst_v4:(%s) prot:(%hu) \n", inet_ntoa(htonl(src_v4)),sk->src_addr->v4.sin_port, inet_ntoa(htonl(dst_v4)),
+	loge("IPv4-mapped IPv4 address src_v4:(%u) prot:(%hu)  dst_v4:(%u) prot:(%hu) \n", src_v4,sk->src_addr->v4.sin_port, dst_v4,
 	     sk->dst_addr->v4.sin_port);
 	if (family == AF_INET6)
 		libnet_type = LIBNET_RAW6;
