@@ -963,6 +963,7 @@ int restore_sockaddr(union libsoccr_addr *sa, int family, u32 pb_port, u32 *pb_a
 	if (family == AF_INET) {
 		sa->v4.sin_family = AF_INET;
 		sa->v4.sin_port = htons(pb_port);
+		pr_info("Restoring inet socket with port %d\n", sa->v4.sin_port);
 		memcpy(&sa->v4.sin_addr.s_addr, pb_addr, sizeof(sa->v4.sin_addr.s_addr));
 		return sizeof(sa->v4);
 	}
