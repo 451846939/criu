@@ -597,7 +597,7 @@ static int send_fin(struct libsoccr_sk *sk, struct libsoccr_sk_data *data, unsig
 
 	family = sk->dst_addr->sa.sa_family;
 	is_ipv4_map_ipv6 = (family == AF_INET6 && ipv6_addr_mapped(sk->dst_addr));
-
+	loge("is_ipv4_map_ipv6: %d\n", is_ipv4_map_ipv6);
 	if (is_ipv4_map_ipv6) {
 		/* TCP over IPv4 */
 		family = AF_INET;
