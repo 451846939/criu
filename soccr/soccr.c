@@ -592,10 +592,11 @@ static int send_fin(struct libsoccr_sk *sk, struct libsoccr_sk_data *data, unsig
 	char errbuf[LIBNET_ERRBUF_SIZE];
 	int mark = SOCCR_MARK;
 	int libnet_type;
+	int is_ipv4_map_ipv6;
 	libnet_t *l;
 
 	family = sk->dst_addr->sa.sa_family;
-	int is_ipv4_map_ipv6 = (family == AF_INET6 && ipv6_addr_mapped(sk->dst_addr));
+	is_ipv4_map_ipv6 = (family == AF_INET6 && ipv6_addr_mapped(sk->dst_addr));
 
 	if (is_ipv4_map_ipv6) {
 		/* TCP over IPv4 */
