@@ -603,10 +603,16 @@ static int send_fin(struct libsoccr_sk *sk, struct libsoccr_sk_data *data, unsig
 		family = AF_INET;
 		dst_v4 = sk->dst_addr->v6.sin6_addr.s6_addr32[3];
 		src_v4 = sk->src_addr->v6.sin6_addr.s6_addr32[3];
-		loge("IPv4-mapped IPv6 address src_v4 prot:(%hu)  dst_v4 prot:(%hu) \n",sk->src_addr->v6.sin6_port, sk->dst_addr->v6.sin6_port);
-		loge("IPv4-mapped IPv4 address src_v4 prot:(%hu)  dst_v4 prot:(%hu) \n",sk->src_addr->v4.sin_port, sk->dst_addr->v4.sin_port);
+		loge("IPv4-mapped IPv6 address src_v4 prot:(%hu)  dst_v4 prot:(%hu) \n", sk->src_addr->v6.sin6_port,
+		     sk->dst_addr->v6.sin6_port);
+		loge("IPv4-mapped IPv4 address src_v4 prot:(%hu)  dst_v4 prot:(%hu) \n", sk->src_addr->v4.sin_port,
+		     sk->dst_addr->v4.sin_port);
 	}
 
+	loge("IPv4-mapped IPv6 address src_v4 prot:(%hu)  dst_v4 prot:(%hu) \n", sk->src_addr->v6.sin6_port,
+	     sk->dst_addr->v6.sin6_port);
+	loge("IPv4-mapped IPv4 address src_v4 prot:(%hu)  dst_v4 prot:(%hu) \n", sk->src_addr->v4.sin_port,
+	     sk->dst_addr->v4.sin_port);
 	if (family == AF_INET6)
 		libnet_type = LIBNET_RAW6;
 	else
@@ -628,17 +634,17 @@ static int send_fin(struct libsoccr_sk *sk, struct libsoccr_sk_data *data, unsig
 	if (is_ipv4_map_ipv6) {
 		ret = libnet_build_tcp(ntohs(sk->dst_addr->v6.sin6_port), /* source port */
 				       ntohs(sk->src_addr->v6.sin6_port), /* destination port */
-				       data->inq_seq,			 /* sequence number */
-				       data->outq_seq - data->outq_len,	 /* acknowledgement num */
-				       flags,				 /* control flags */
-				       data->rcv_wnd,			 /* window size */
-				       0,				 /* checksum */
-				       10,				 /* urgent pointer */
-				       LIBNET_TCP_H + 20,		 /* TCP packet size */
-				       NULL,				 /* payload */
-				       0,				 /* payload size */
-				       l,				 /* libnet handle */
-				       0);				 /* libnet id */
+				       data->inq_seq,			  /* sequence number */
+				       data->outq_seq - data->outq_len,	  /* acknowledgement num */
+				       flags,				  /* control flags */
+				       data->rcv_wnd,			  /* window size */
+				       0,				  /* checksum */
+				       10,				  /* urgent pointer */
+				       LIBNET_TCP_H + 20,		  /* TCP packet size */
+				       NULL,				  /* payload */
+				       0,				  /* payload size */
+				       l,				  /* libnet handle */
+				       0);				  /* libnet id */
 	} else {
 		ret = libnet_build_tcp(ntohs(sk->dst_addr->v4.sin_port), /* source port */
 				       ntohs(sk->src_addr->v4.sin_port), /* destination port */
