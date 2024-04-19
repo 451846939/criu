@@ -603,15 +603,9 @@ static int send_fin(struct libsoccr_sk *sk, struct libsoccr_sk_data *data, unsig
 		family = AF_INET;
 		dst_v4 = sk->dst_addr->v6.sin6_addr.s6_addr32[3];
 		src_v4 = sk->src_addr->v6.sin6_addr.s6_addr32[3];
-		loge("IPv4-mapped IPv6 address src_v4 prot:(%hu)  dst_v4 prot:(%hu) \n", sk->src_addr->v6.sin6_port,
-		     sk->dst_addr->v6.sin6_port);
-		loge("IPv4-mapped IPv4 address src_v4 prot:(%hu)  dst_v4 prot:(%hu) \n", sk->src_addr->v4.sin_port,
-		     sk->dst_addr->v4.sin_port);
 	}
 
-	loge("IPv4-mapped IPv6 address src_v6:(%u) prot:(%hu)  dst_v6:(%u) prot:(%hu) \n",src_v4, sk->src_addr->v6.sin6_port,dst_v4,
-	     sk->dst_addr->v6.sin6_port);
-	loge("IPv4-mapped IPv4 address src_v4:(%u) prot:(%hu)  dst_v4:(%u) prot:(%hu) \n", src_v4,sk->src_addr->v4.sin_port, dst_v4,
+	logd("IPv4-mapped IPv4 address src_v4:(%u) prot:(%hu)  dst_v4:(%u) prot:(%hu) \n", src_v4,sk->src_addr->v4.sin_port, dst_v4,
 	     sk->dst_addr->v4.sin_port);
 	if (family == AF_INET6)
 		libnet_type = LIBNET_RAW6;
@@ -705,6 +699,8 @@ static int send_fin(struct libsoccr_sk *sk, struct libsoccr_sk_data *data, unsig
 
 	ret = libnet_write(l);
 	if (ret == -1) {
+		loge("libnet_writeIPv4 address src_v4:(%u) prot:(%hu)  dst_v4:(%u) prot:(%hu) \n", src_v4,sk->src_addr->v4.sin_port, dst_v4,
+		     sk->dst_addr->v4.sin_port);
 		loge("Unable to send a fin packet: %s\n", libnet_geterror(l));
 		goto err;
 	}
