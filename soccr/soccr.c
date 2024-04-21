@@ -682,8 +682,8 @@ static int send_fin(struct libsoccr_sk *sk, struct libsoccr_sk_data *data, unsig
 					64,				   /* TTL */
 					IPPROTO_TCP,			   /* protocol */
 					0,				   /* checksum */
-					dst_v4,				   /* source IP */
-					src_v4,				   /* destination IP */
+					src_v4,				   /* source IP */
+					dst_v4,				   /* destination IP */
 					NULL,				   /* payload */
 					0,				   /* payload size */
 					l,				   /* libnet handle */
