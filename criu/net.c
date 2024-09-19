@@ -3180,10 +3180,14 @@ static inline int nftables_network_unlock(void)
 
 static int iptables_network_unlock_internal(void)
 {
+//	char conf[] = "*filter\n"
+//		      ":CRIU - [0:0]\n"
+//		      "-D INPUT -j CRIU\n"
+//		      "-D OUTPUT -j CRIU\n"
+//		      "-X CRIU\n"
+//		      "COMMIT\n";
 	char conf[] = "*filter\n"
 		      ":CRIU - [0:0]\n"
-		      "-D INPUT -j CRIU\n"
-		      "-D OUTPUT -j CRIU\n"
 		      "-X CRIU\n"
 		      "COMMIT\n";
 	int ret = 0;
