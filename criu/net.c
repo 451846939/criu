@@ -3108,13 +3108,14 @@ out:
 static int iptables_network_lock_internal(void)
 {
 	char conf[] = "*filter\n"
-		      "-N CRIU || true\n"  // 创建链，只在不存在时创建
-		      "-C INPUT -j CRIU || -I INPUT -j CRIU\n"  // 确保规则存在
-		      "-C OUTPUT -j CRIU || -I OUTPUT -j CRIU\n"
+		      ":CRIU - [0:0]\n"  // 创建自定义链 CRIU
+		      "-I INPUT -j CRIU\n"  // 在 INPUT 链中插入规则，跳转到 CRIU 链
+		      "-I OUTPUT -j CRIU\n"  // 在 OUTPUT 链中插入规则，跳转到 CRIU 链
 		      "-I OUTPUT -p tcp -j DROP\n"  // 丢弃所有 TCP 出站流量
 		      "-A CRIU -m mark --mark " __stringify(SOCCR_MARK) " -j ACCEPT\n"
 									"-A CRIU -j DROP\n"
 									"COMMIT\n";
+
 	int ret = 0;
 
 	ret |= iptables_restore(false, conf, sizeof(conf) - 1);
@@ -3186,11 +3187,11 @@ static inline int nftables_network_unlock(void)
 static int iptables_network_unlock_internal(void)
 {
 	char conf[] = "*filter\n"
-		      "-C INPUT -j CRIU && -D INPUT -j CRIU\n"  // 确保规则删除
-		      "-C OUTPUT -j CRIU && -D OUTPUT -j CRIU\n"
+		      "-D INPUT -j CRIU\n"  // 删除 INPUT 链中的 CRIU 规则
+		      "-D OUTPUT -j CRIU\n"  // 删除 OUTPUT 链中的 CRIU 规则
 		      "-D OUTPUT -p tcp -j DROP\n"  // 删除 TCP 丢弃规则
-		      "-F CRIU || true\n"  // 清空 CRIU 链，若存在
-		      "-X CRIU || true\n"  // 删除 CRIU 链，若存在
+		      "-F CRIU\n"  // 清空 CRIU 链
+		      "-X CRIU\n"  // 删除 CRIU 链
 		      "COMMIT\n";
 	int ret = 0;
 
