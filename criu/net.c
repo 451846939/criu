@@ -3213,6 +3213,9 @@ static int network_unlock_internal(void)
 	if (switch_ns(root_item->pid->real, &net_ns_desc, &nsret))
 		return -1;
 
+	// 设置 PATH 环境变量，确保能够找到 iptables 或 nftables
+	setenv("PATH", "/usr/sbin:/sbin:/usr/bin:/bin", 1);
+
 	if (opts.network_lock_method == NETWORK_LOCK_IPTABLES)
 		ret = iptables_network_unlock_internal();
 	else if (opts.network_lock_method == NETWORK_LOCK_NFTABLES)
