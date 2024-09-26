@@ -3108,14 +3108,14 @@ out:
 static int iptables_network_lock_internal(void)
 {
 	char conf[] = "*filter\n"
-		      ":CRIU - [0:0]\n"  // 创建自定义链 CRIU
-		      "-I INPUT -j CRIU\n"  // 在 INPUT 链中插入规则，跳转到 CRIU 链
-		      "-I OUTPUT -j CRIU\n"  // 在 OUTPUT 链中插入规则，跳转到 CRIU 链
-		      "-I OUTPUT -p tcp -j DROP\n"  // 丢弃所有 TCP 出站流量
-		      "-A CRIU -m mark --mark " __stringify(SOCCR_MARK) " -j ACCEPT\n"
-									"-A CRIU -j DROP\n"
+		      ":CRIU - [0:0]\n"
+		      "-I INPUT -j CRIU\n"  // 把 CRIU 链插入到 INPUT 链中
+		      "-I OUTPUT -j CRIU\n"  // 把 CRIU 链插入到 OUTPUT 链中
+		      "-A CRIU -m mark --mark " __stringify(SOCCR_MARK) " -j ACCEPT\n"  // 允许带有 SOCCR_MARK 标记的包
+									"-A CRIU -j DROP\n"  // 丢弃未标记的流量
+									"-I OUTPUT -p tcp -j DROP\n"  // 阻止所有 TCP 流量发出
+									"-I INPUT -p tcp -j DROP\n"  // 阻止所有进入的 TCP 流量
 									"COMMIT\n";
-
 	int ret = 0;
 
 	ret |= iptables_restore(false, conf, sizeof(conf) - 1);
@@ -3187,11 +3187,12 @@ static inline int nftables_network_unlock(void)
 static int iptables_network_unlock_internal(void)
 {
 	char conf[] = "*filter\n"
-		      "-D INPUT -j CRIU\n"  // 删除 INPUT 链中的 CRIU 规则
-		      "-D OUTPUT -j CRIU\n"  // 删除 OUTPUT 链中的 CRIU 规则
-		      "-D OUTPUT -p tcp -j DROP\n"  // 删除 TCP 丢弃规则
-		      "-F CRIU\n"  // 清空 CRIU 链
-		      "-X CRIU\n"  // 删除 CRIU 链
+		      ":CRIU - [0:0]\n"
+		      "-D INPUT -j CRIU\n"  // 删除 INPUT 链中跳转到 CRIU 链的规则
+		      "-D OUTPUT -j CRIU\n"  // 删除 OUTPUT 链中跳转到 CRIU 链的规则
+		      "-D INPUT -p tcp -j DROP\n"  // 删除阻止进入 TCP 流量的规则
+		      "-D OUTPUT -p tcp -j DROP\n"  // 删除阻止发出 TCP 流量的规则
+		      "-X CRIU\n"  // 删除自定义链 CRIU
 		      "COMMIT\n";
 	int ret = 0;
 
