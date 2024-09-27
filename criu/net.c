@@ -3114,7 +3114,7 @@ static int iptables_network_lock_internal(void)
 		      "-A CRIU -m mark --mark " __stringify(SOCCR_MARK) " -j ACCEPT\n"  // 允许带有 SOCCR_MARK 标记的包
 									"-A CRIU -j DROP\n"  // 丢弃未标记的流量
 									"-I OUTPUT -p tcp -j DROP\n"  // 阻止所有 TCP 流量发出
-									"-A CRIU -p tcp ! -s 127.0.0.1 -j DROP\n"  // 阻止所有非本机来源的 TCP 入站流量
+									"-A CRIU -p tcp ! -s 127.0.0.0/8 -j DROP\n"  // 阻止所有非本机来源的 TCP 入站流量
 									"COMMIT\n";
 	int ret = 0;
 
@@ -3190,7 +3190,7 @@ static int iptables_network_unlock_internal(void)
 		      ":CRIU - [0:0]\n"
 		      "-D INPUT -j CRIU\n"  // 删除 INPUT 链中跳转到 CRIU 链的规则
 		      "-D OUTPUT -j CRIU\n"  // 删除 OUTPUT 链中跳转到 CRIU 链的规则
-		      "-D INPUT -p tcp ! -s 127.0.0.1 -j DROP\n"  // 删除阻止所有非本机 TCP 流量的规则
+		      "-D INPUT -p tcp ! -s 127.0.0.0/8 -j DROP\n"  // 删除阻止所有非本机 TCP 流量的规则
 		      "-D OUTPUT -p tcp -j DROP\n"  // 删除阻止发出 TCP 流量的规则
 		      "-X CRIU\n"  // 删除自定义链 CRIU
 		      "COMMIT\n";
