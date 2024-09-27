@@ -3116,11 +3116,22 @@ static int iptables_network_lock_internal(void)
 									"-I OUTPUT -p tcp -j DROP\n"  // 阻止所有 TCP 流量发出
 									"-A CRIU -p tcp ! -s 127.0.0.0/8 -j DROP\n"  // 阻止所有非本机来源的 TCP 入站流量
 									"COMMIT\n";
+	char conf_ipv6[] = "*filter\n"
+		      ":CRIU - [0:0]\n"
+		      "-I INPUT -j CRIU\n"  // 把 CRIU 链插入到 INPUT 链中
+		      "-I OUTPUT -j CRIU\n"  // 把 CRIU 链插入到 OUTPUT 链中
+		      "-A CRIU -m mark --mark " __stringify(SOCCR_MARK) " -j ACCEPT\n"  // 允许带有 SOCCR_MARK 标记的包
+									"-A CRIU -j DROP\n"  // 丢弃未标记的流量
+									"-I OUTPUT -p tcp -j DROP\n"  // 阻止所有 TCP 流量发出
+									"-A CRIU -p tcp ! -s ::1 -j DROP\n"  // 阻止所有非本机来源的 TCP 入站流量
+									"COMMIT\n";
+
+
 	int ret = 0;
 
 	ret |= iptables_restore(false, conf, sizeof(conf) - 1);
 	if (kdat.ipv6)
-		ret |= iptables_restore(true, conf, sizeof(conf) - 1);
+		ret |= iptables_restore(true, conf, sizeof(conf_ipv6) - 1);
 
 	if (ret)
 		pr_err("Locking network failed: iptables-restore returned %d. "
@@ -3194,11 +3205,20 @@ static int iptables_network_unlock_internal(void)
 		      "-D OUTPUT -p tcp -j DROP\n"  // 删除阻止发出 TCP 流量的规则
 		      "-X CRIU\n"  // 删除自定义链 CRIU
 		      "COMMIT\n";
+
+	char conf_ipv6[] = "*filter\n"
+		      ":CRIU - [0:0]\n"
+		      "-D INPUT -j CRIU\n"  // 删除 INPUT 链中跳转到 CRIU 链的规则
+		      "-D OUTPUT -j CRIU\n"  // 删除 OUTPUT 链中跳转到 CRIU 链的规则
+		      "-D INPUT -p tcp ! -s ::1 -j DROP\n"  // 删除阻止所有非本机 TCP 流量的规则
+		      "-D OUTPUT -p tcp -j DROP\n"  // 删除阻止发出 TCP 流量的规则
+		      "-X CRIU\n"  // 删除自定义链 CRIU
+		      "COMMIT\n";
 	int ret = 0;
 
 	ret |= iptables_restore(false, conf, sizeof(conf) - 1);
 	if (kdat.ipv6)
-		ret |= iptables_restore(true, conf, sizeof(conf) - 1);
+		ret |= iptables_restore(true, conf, sizeof(conf_ipv6) - 1);
 
 	return ret;
 }
