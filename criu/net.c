@@ -3119,9 +3119,16 @@ static int iptables_network_lock_internal(void)
 
 	int ret = 0;
 
-	ret |= iptables_restore(false, conf, sizeof(conf) - 1);
-	if (kdat.ipv6)
-		ret |= iptables_restore(true, conf, sizeof(conf) - 1);
+	// 添加检查，避免重复添加规则
+	if (system("iptables -C INPUT -j CRIU") != 0) {
+		pr_info("Adding CRIU rules for the first time.\n");
+		ret |= iptables_restore(false, conf, sizeof(conf) - 1);
+		if (kdat.ipv6)
+			ret |= iptables_restore(true, conf, sizeof(conf) - 1);
+	} else {
+		pr_info("CRIU rules already exist, skipping re-addition.\n");
+	}
+
 
 	if (ret)
 		pr_err("Locking network failed: iptables-restore returned %d. "
