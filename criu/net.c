@@ -3199,18 +3199,18 @@ static int network_unlock_internal(void)
 {
 	int ret = 0, nsret;
 	// 打印 opts.network_lock_method，方便调试锁定方法
-	pr_info("network_lock_method: %d\n", opts.network_lock_method);
+	pr_err("network_lock_method: %d\n", opts.network_lock_method);
 
 	if (opts.network_lock_method == NETWORK_LOCK_SKIP)
 		return 0;
 
 	// 打印 root_item 和 pid 信息
-	pr_info("root_item->pid->real: %d\n", root_item->pid->real);
+	pr_err("root_item->pid->real: %d\n", root_item->pid->real);
 	if (switch_ns(root_item->pid->real, &net_ns_desc, &nsret))
 		return -1;
 
 	// 打印 nsret 的值
-	pr_info("Namespace switch return value: %d\n", nsret);
+	pr_err("Namespace switch return value: %d\n", nsret);
 	if (opts.network_lock_method == NETWORK_LOCK_IPTABLES)
 		ret = iptables_network_unlock_internal();
 	else if (opts.network_lock_method == NETWORK_LOCK_NFTABLES)
