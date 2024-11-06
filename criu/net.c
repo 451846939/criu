@@ -853,7 +853,7 @@ static int dump_sit(NetDeviceEntry *nde, struct cr_imgset *imgset, struct nlattr
 		memcpy(&rl_prefix, nla_data(data[IFLA_IPTUN_6RD_RELAY_PREFIX]), sizeof(rl_prefix));
 		se.n_relay_prefix = 1;
 		se.relay_prefix = &rl_prefix;
-	skip:;
+skip:;
 	}
 
 #undef ENCODE_ENTRY
@@ -932,7 +932,7 @@ static int dump_one_link(struct nlmsghdr *hdr, struct ns_id *ns, void *arg)
 		ret = dump_one_sit(ifi, kind, tb, ns, fds);
 		break;
 	default:
-	unk:
+unk:
 		ret = dump_unknown_device(ifi, kind, tb, ns, fds);
 		break;
 	}
@@ -1731,7 +1731,7 @@ static int sit_link_info(struct ns_id *ns, struct net_link *link, struct newlink
 		aux = se->relay_prefixlen;
 		addattr_l(&req->h, sizeof(*req), IFLA_IPTUN_6RD_RELAY_PREFIXLEN, &aux, sizeof(u16));
 		addattr_l(&req->h, sizeof(*req), IFLA_IPTUN_6RD_RELAY_PREFIX, se->relay_prefix, sizeof(u32));
-	skip:;
+skip:;
 	}
 
 #undef DECODE_ENTRY
@@ -3198,13 +3198,19 @@ static int iptables_network_unlock_internal(void)
 static int network_unlock_internal(void)
 {
 	int ret = 0, nsret;
+	// 打印 opts.network_lock_method，方便调试锁定方法
+	pr_info("network_lock_method: %d\n", opts.network_lock_method);
 
 	if (opts.network_lock_method == NETWORK_LOCK_SKIP)
 		return 0;
 
+	// 打印 root_item 和 pid 信息
+	pr_info("root_item->pid->real: %d\n", root_item->pid->real);
 	if (switch_ns(root_item->pid->real, &net_ns_desc, &nsret))
 		return -1;
 
+	// 打印 nsret 的值
+	pr_info("Namespace switch return value: %d\n", nsret);
 	if (opts.network_lock_method == NETWORK_LOCK_IPTABLES)
 		ret = iptables_network_unlock_internal();
 	else if (opts.network_lock_method == NETWORK_LOCK_NFTABLES)
