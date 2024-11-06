@@ -853,7 +853,7 @@ static int dump_sit(NetDeviceEntry *nde, struct cr_imgset *imgset, struct nlattr
 		memcpy(&rl_prefix, nla_data(data[IFLA_IPTUN_6RD_RELAY_PREFIX]), sizeof(rl_prefix));
 		se.n_relay_prefix = 1;
 		se.relay_prefix = &rl_prefix;
-	skip:;
+skip:;
 	}
 
 #undef ENCODE_ENTRY
@@ -932,7 +932,7 @@ static int dump_one_link(struct nlmsghdr *hdr, struct ns_id *ns, void *arg)
 		ret = dump_one_sit(ifi, kind, tb, ns, fds);
 		break;
 	default:
-	unk:
+unk:
 		ret = dump_unknown_device(ifi, kind, tb, ns, fds);
 		break;
 	}
@@ -1731,7 +1731,7 @@ static int sit_link_info(struct ns_id *ns, struct net_link *link, struct newlink
 		aux = se->relay_prefixlen;
 		addattr_l(&req->h, sizeof(*req), IFLA_IPTUN_6RD_RELAY_PREFIXLEN, &aux, sizeof(u16));
 		addattr_l(&req->h, sizeof(*req), IFLA_IPTUN_6RD_RELAY_PREFIX, se->relay_prefix, sizeof(u32));
-	skip:;
+skip:;
 	}
 
 #undef DECODE_ENTRY
@@ -3109,26 +3109,16 @@ static int iptables_network_lock_internal(void)
 {
 	char conf[] = "*filter\n"
 		      ":CRIU - [0:0]\n"
-		      "-I INPUT -j CRIU\n"  // 把 CRIU 链插入到 INPUT 链中
-		      "-I OUTPUT -j CRIU\n"  // 把 CRIU 链插入到 OUTPUT 链中
-		      "-A CRIU -m mark --mark " __stringify(SOCCR_MARK) " -j ACCEPT\n"  // 允许带有 SOCCR_MARK 标记的包
-									"-A CRIU -p tcp ! -i lo -j DROP\n"  // 阻止所有非本地来源的 TCP 入站流量
-									"-A CRIU -j DROP\n"  // 丢弃未标记的流量
-									"-A OUTPUT -p tcp -j DROP\n"  // 阻止所有 TCP 出站流量
+		      "-I INPUT -j CRIU\n"
+		      "-I OUTPUT -j CRIU\n"
+		      "-A CRIU -m mark --mark " __stringify(SOCCR_MARK) " -j ACCEPT\n"
+									"-A CRIU -j DROP\n"
 									"COMMIT\n";
-
 	int ret = 0;
 
-	// 添加检查，避免重复添加规则
-	if (system("iptables -C INPUT -j CRIU") != 0) {
-		pr_info("Adding CRIU rules for the first time.\n");
-		ret |= iptables_restore(false, conf, sizeof(conf) - 1);
-		if (kdat.ipv6)
-			ret |= iptables_restore(true, conf, sizeof(conf) - 1);
-	} else {
-		pr_info("CRIU rules already exist, skipping re-addition.\n");
-	}
-
+	ret |= iptables_restore(false, conf, sizeof(conf) - 1);
+	if (kdat.ipv6)
+		ret |= iptables_restore(true, conf, sizeof(conf) - 1);
 
 	if (ret)
 		pr_err("Locking network failed: iptables-restore returned %d. "
@@ -3196,11 +3186,9 @@ static int iptables_network_unlock_internal(void)
 {
 	char conf[] = "*filter\n"
 		      ":CRIU - [0:0]\n"
-		      "-D INPUT -j CRIU\n"  // 删除 INPUT 链中跳转到 CRIU 链的规则
-		      "-D OUTPUT -j CRIU\n"  // 删除 OUTPUT 链中跳转到 CRIU 链的规则
-		      "-D CRIU -p tcp ! -i lo -j DROP\n"  // 删除阻止所有非本地 TCP 流量的规则
-		      "-D OUTPUT -p tcp -j DROP\n"  // 删除阻止发出 TCP 流量的规则
-		      "-X CRIU\n"  // 删除自定义链 CRIU
+		      "-D INPUT -j CRIU\n"
+		      "-D OUTPUT -j CRIU\n"
+		      "-X CRIU\n"
 		      "COMMIT\n";
 	int ret = 0;
 
@@ -3214,16 +3202,22 @@ static int iptables_network_unlock_internal(void)
 static int network_unlock_internal(void)
 {
 	int ret = 0, nsret;
+	// 打印 opts.network_lock_method，方便调试锁定方法
+	pr_err("network_lock_method: %d\n", opts.network_lock_method);
 
 	if (opts.network_lock_method == NETWORK_LOCK_SKIP)
 		return 0;
 
+	// 打印 root_item 和 pid 信息
+	pr_err("root_item->pid->real: %d\n", root_item->pid->real);
 	if (switch_ns(root_item->pid->real, &net_ns_desc, &nsret))
 		return -1;
 
 	// 设置 PATH 环境变量，确保能够找到 iptables 或 nftables
 	setenv("PATH", "/usr/sbin:/sbin:/usr/bin:/bin", 1);
 
+	// 打印 nsret 的值
+	pr_err("Namespace switch return value: %d\n", nsret);
 	if (opts.network_lock_method == NETWORK_LOCK_IPTABLES)
 		ret = iptables_network_unlock_internal();
 	else if (opts.network_lock_method == NETWORK_LOCK_NFTABLES)
