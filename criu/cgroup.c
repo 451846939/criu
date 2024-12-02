@@ -1481,6 +1481,7 @@ static int restore_cgroup_prop(const CgroupPropEntry *cg_prop_entry_p, char *pat
 	FILE *ls_fp;
 	FILE *findmnt_fp;
 	char buffer[512];
+	char abs_path[PATH_MAX];
 	CgroupPerms *perms = cg_prop_entry_p->perms;
 	int is_subtree_control = !strcmp(cg_prop_entry_p->name, "cgroup.subtree_control");
 
@@ -1561,9 +1562,13 @@ static int restore_cgroup_prop(const CgroupPropEntry *cg_prop_entry_p, char *pat
 		if (ret != len) {
 			pr_perror("Failed writing %s to %s", cg_prop_entry_p->value, path);
 
+			// 确保路径是绝对路径
+			snprintf(abs_path, sizeof(abs_path), "/sys/fs/cgroup/%s", path);
+			pr_info("  Checking absolute path: %s\n", abs_path);
+
 			// 打印路径权限
-			pr_info("  Path permissions for %s:\n", path);
-			snprintf(buffer, sizeof(buffer), "ls -ld %s", path);
+			pr_info("  Path permissions for %s:\n", abs_path);
+			snprintf(buffer, sizeof(buffer), "ls -ld %s", abs_path);
 			ls_fp = popen(buffer, "r");
 			if (ls_fp) {
 				while (fgets(buffer, sizeof(buffer), ls_fp) != NULL) {
@@ -1571,12 +1576,12 @@ static int restore_cgroup_prop(const CgroupPropEntry *cg_prop_entry_p, char *pat
 				}
 				pclose(ls_fp);
 			} else {
-				pr_err("Failed to execute 'ls -ld %s'\n", path);
+				pr_err("Failed to execute 'ls -ld %s'\n", abs_path);
 			}
 
 			// 打印挂载点信息
-			pr_info("  Mount options for %s:\n", path);
-			snprintf(buffer, sizeof(buffer), "findmnt %s", path);
+			pr_info("  Mount options for %s:\n", abs_path);
+			snprintf(buffer, sizeof(buffer), "findmnt %s", abs_path);
 			findmnt_fp = popen(buffer, "r");
 			if (findmnt_fp) {
 				while (fgets(buffer, sizeof(buffer), findmnt_fp) != NULL) {
@@ -1584,7 +1589,7 @@ static int restore_cgroup_prop(const CgroupPropEntry *cg_prop_entry_p, char *pat
 				}
 				pclose(findmnt_fp);
 			} else {
-				pr_err("Failed to execute 'findmnt %s'\n", path);
+				pr_err("Failed to execute 'findmnt %s'\n", abs_path);
 			}
 			// 新增代码：检查 cgroup 路径是否存在
 //			check_parent_directories(path);
