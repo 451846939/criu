@@ -1478,8 +1478,6 @@ static int restore_cgroup_prop(const CgroupPropEntry *cg_prop_entry_p, char *pat
 			       bool skip_fails)
 {
 	int cg, fd, exit_code = -1, flag;
-	// 打印路径权限
-	char command[PATH_MAX];
 	CgroupPerms *perms = cg_prop_entry_p->perms;
 	int is_subtree_control = !strcmp(cg_prop_entry_p->name, "cgroup.subtree_control");
 
@@ -1560,14 +1558,31 @@ static int restore_cgroup_prop(const CgroupPropEntry *cg_prop_entry_p, char *pat
 		if (ret != len) {
 			pr_perror("Failed writing %s to %s", cg_prop_entry_p->value, path);
 
-			snprintf(command, PATH_MAX, "ls -ld %s", path);
-			pr_info("  Path permissions:\n");
-			system(command);  // 打印目标路径的权限
+			// 打印路径权限
+			pr_info("  Path permissions for %s:\n", path);
+			FILE *ls_fp = popen("ls -ld %s", "r");
+			if (ls_fp) {
+				char buffer[512];
+				while (fgets(buffer, sizeof(buffer), ls_fp) != NULL) {
+					pr_info("%s", buffer);
+				}
+				pclose(ls_fp);
+			} else {
+				pr_err("Failed to execute 'ls -ld %s'\n", path);
+			}
 
 			// 打印挂载点信息
-			snprintf(command, PATH_MAX, "findmnt %s", path);
-			pr_info("  Mount options:\n");
-			system(command);  // 打印挂载点信息
+			pr_info("  Mount options for %s:\n", path);
+			FILE *findmnt_fp = popen("findmnt %s", "r");
+			if (findmnt_fp) {
+				char buffer[512];
+				while (fgets(buffer, sizeof(buffer), findmnt_fp) != NULL) {
+					pr_info("%s", buffer);
+				}
+				pclose(findmnt_fp);
+			} else {
+				pr_err("Failed to execute 'findmnt %s'\n", path);
+			}
 			// 新增代码：检查 cgroup 路径是否存在
 //			check_parent_directories(path);
 			// 添加此段以打印 /sys/fs/cgroup 的目录结构
