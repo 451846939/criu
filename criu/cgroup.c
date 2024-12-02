@@ -1557,10 +1557,14 @@ static int restore_cgroup_prop(const CgroupPropEntry *cg_prop_entry_p, char *pat
 			ret = len;
 		if (ret != len) {
 			pr_perror("Failed writing %s to %s", cg_prop_entry_p->value, path);
+			pr_info("  Path permissions:");
+			system("ls -ld %s", path);  // 打印目标路径的权限
+			pr_info("  Mount options:");
+			system("findmnt %s", path); // 打印挂载点的信息
 			// 新增代码：检查 cgroup 路径是否存在
-			check_parent_directories(path);
+//			check_parent_directories(path);
 			// 添加此段以打印 /sys/fs/cgroup 的目录结构
-			print_cgroup_directories_recursive("/sys/fs/cgroup", 0);
+//			print_cgroup_directories_recursive("/sys/fs/cgroup", 0);
 			if (!skip_fails)
 				goto out;
 		}
