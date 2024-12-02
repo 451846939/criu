@@ -72,36 +72,31 @@ void check_parent_directories(const char *path);
 
 void check_parent_directories(const char *path) {
 	char temp[PATH_MAX];
-	char *current_path;
+	char partial_path[PATH_MAX] = "";
 	struct stat st;
 
 	// 拷贝路径以避免修改原始路径
 	snprintf(temp, sizeof(temp), "%s", path);
 
-	// 开始逐级检查父目录
-	current_path = temp;
-	while (strcmp(current_path, "/") != 0) {
-		if (stat(current_path, &st) != 0) {
-			pr_perror("Missing directory: %s\n", current_path);  // 打印缺失目录
+	// 逐级检查路径
+	char *token = strtok(temp, "/");
+	while (token != NULL) {
+		// 构建逐级路径
+		if (strlen(partial_path) > 0) {
+			snprintf(partial_path + strlen(partial_path), sizeof(partial_path) - strlen(partial_path), "/%s", token);
 		} else {
-			pr_info("Directory exists: %s\n", current_path);  // 打印存在目录
+			snprintf(partial_path, sizeof(partial_path), "/%s", token);
 		}
 
-		// 获取父目录
-		current_path = dirname(current_path);
-
-		// 如果路径没有变化（防止陷入死循环）
-		if (strcmp(current_path, temp) == 0) {
-			pr_perror("Unexpected error: dirname() returned the same path\n");
-			break;
+		// 检查路径是否存在
+		if (stat(partial_path, &st) != 0) {
+			pr_err("Missing directory: %s\n", partial_path);
+		} else {
+			pr_info("Directory exists: %s\n", partial_path);
 		}
-	}
 
-	// 最后检查根目录
-	if (stat("/", &st) != 0) {
-		pr_perror("Root directory is missing, which is unexpected.\n");
-	} else {
-		pr_info("Root directory exists: /\n");
+		// 获取下一级路径
+		token = strtok(NULL, "/");
 	}
 }
 
