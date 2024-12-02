@@ -9,6 +9,7 @@
 #include <libgen.h>
 #include <sched.h>
 #include <sys/wait.h>
+#include <dirent.h>
 
 #include "common/list.h"
 #include "xmalloc.h"
@@ -69,6 +70,28 @@ static CgSetEntry *find_rst_set_by_id(u32 id)
 	return NULL;
 }
 void check_parent_directories(const char *path);
+
+// 辅助函数：打印指定路径下的所有子目录
+void print_cgroup_directories(const char *path) {
+	DIR *dir;
+	struct dirent *entry;
+
+	pr_info("Listing directories under: %s\n", path);
+
+	dir = opendir(path);
+	if (dir == NULL) {
+		pr_perror("Failed to open directory: %s", path);
+		return;
+	}
+
+	while ((entry = readdir(dir)) != NULL) {
+		if (entry->d_type == DT_DIR || entry->d_type == DT_UNKNOWN) {
+			pr_info("Found directory: %s/%s\n", path, entry->d_name);
+		}
+	}
+
+	closedir(dir);
+}
 
 void check_parent_directories(const char *path) {
 	char temp[PATH_MAX];
@@ -1519,6 +1542,8 @@ static int restore_cgroup_prop(const CgroupPropEntry *cg_prop_entry_p, char *pat
 			pr_perror("Failed writing %s to %s", cg_prop_entry_p->value, path);
 			// 新增代码：检查 cgroup 路径是否存在
 			check_parent_directories(path);
+			// 添加此段以打印 /sys/fs/cgroup 的目录结构
+			print_cgroup_directories("/sys/fs/cgroup");
 			if (!skip_fails)
 				goto out;
 		}
