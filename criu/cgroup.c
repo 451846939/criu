@@ -1480,8 +1480,8 @@ static int restore_cgroup_prop(const CgroupPropEntry *cg_prop_entry_p, char *pat
 	int cg, fd, exit_code = -1, flag;
 	FILE *ls_fp;
 	FILE *findmnt_fp;
-	char buffer[512];
-	char abs_path[PATH_MAX];
+	char buffer[8192];
+	char abs_path[4096];
 	CgroupPerms *perms = cg_prop_entry_p->perms;
 	int is_subtree_control = !strcmp(cg_prop_entry_p->name, "cgroup.subtree_control");
 
@@ -1562,34 +1562,43 @@ static int restore_cgroup_prop(const CgroupPropEntry *cg_prop_entry_p, char *pat
 		if (ret != len) {
 			pr_perror("Failed writing %s to %s", cg_prop_entry_p->value, path);
 
+
 			// 确保路径是绝对路径
 			snprintf(abs_path, sizeof(abs_path), "/sys/fs/cgroup/%s", path);
 			pr_info("  Checking absolute path: %s\n", abs_path);
 
 			// 打印路径权限
 			pr_info("  Path permissions for %s:\n", abs_path);
-			snprintf(buffer, sizeof(buffer), "ls -ld %s", abs_path);
-			ls_fp = popen(buffer, "r");
-			if (ls_fp) {
-				while (fgets(buffer, sizeof(buffer), ls_fp) != NULL) {
-					pr_info("%s", buffer);
-				}
-				pclose(ls_fp);
+			int cmd_len = snprintf(buffer, sizeof(buffer), "ls -ld %s", abs_path);
+			if (cmd_len < 0 || cmd_len >= sizeof(buffer)) {
+				pr_err("Command string too long for ls -ld\n");
 			} else {
-				pr_err("Failed to execute 'ls -ld %s'\n", abs_path);
+				ls_fp = popen(buffer, "r");
+				if (ls_fp) {
+					while (fgets(buffer, sizeof(buffer), ls_fp) != NULL) {
+						pr_info("%s", buffer);
+					}
+					pclose(ls_fp);
+				} else {
+					pr_err("Failed to execute 'ls -ld %s'\n", abs_path);
+				}
 			}
 
 			// 打印挂载点信息
 			pr_info("  Mount options for %s:\n", abs_path);
-			snprintf(buffer, sizeof(buffer), "findmnt %s", abs_path);
-			findmnt_fp = popen(buffer, "r");
-			if (findmnt_fp) {
-				while (fgets(buffer, sizeof(buffer), findmnt_fp) != NULL) {
-					pr_info("%s", buffer);
-				}
-				pclose(findmnt_fp);
+			cmd_len = snprintf(buffer, sizeof(buffer), "findmnt %s", abs_path);
+			if (cmd_len < 0 || cmd_len >= sizeof(buffer)) {
+				pr_err("Command string too long for findmnt\n");
 			} else {
-				pr_err("Failed to execute 'findmnt %s'\n", abs_path);
+				findmnt_fp = popen(buffer, "r");
+				if (findmnt_fp) {
+					while (fgets(buffer, sizeof(buffer), findmnt_fp) != NULL) {
+						pr_info("%s", buffer);
+					}
+					pclose(findmnt_fp);
+				} else {
+					pr_err("Failed to execute 'findmnt %s'\n", abs_path);
+				}
 			}
 			// 新增代码：检查 cgroup 路径是否存在
 //			check_parent_directories(path);
