@@ -68,6 +68,23 @@ static CgSetEntry *find_rst_set_by_id(u32 id)
 
 	return NULL;
 }
+void check_parent_directories(const char *path);
+
+void check_parent_directories(const char *path) {
+	char temp[PATH_MAX];
+	struct stat st;
+
+	snprintf(temp, sizeof(temp), "%s", path);
+
+	while (strcmp(temp, "/") != 0) {
+		if (stat(temp, &st) != 0) {
+			pr_err("Missing directory: %s\n", temp);
+			break;
+		}
+		dirname(temp);
+	}
+}
+
 
 #define CGCMP_MATCH 1 /* check for exact match */
 #define CGCMP_ISSUB 2 /* check set is subset of ctls */
@@ -1484,11 +1501,7 @@ static int restore_cgroup_prop(const CgroupPropEntry *cg_prop_entry_p, char *pat
 		if (ret != len) {
 			pr_perror("Failed writing %s to %s", cg_prop_entry_p->value, path);
 			// 新增代码：检查 cgroup 路径是否存在
-			if (access(path, F_OK) != 0) {
-				pr_perror("Cgroup path does not exist: %s\n", path);
-			} else {
-				pr_perror("Cgroup path exists but write failed: %s\n", path);
-			}
+			check_parent_directories(path);
 			if (!skip_fails)
 				goto out;
 		}
