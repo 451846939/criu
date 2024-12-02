@@ -72,14 +72,16 @@ void check_parent_directories(const char *path);
 
 void check_parent_directories(const char *path) {
 	char temp[PATH_MAX];
-	char partial_path[PATH_MAX] = "";
+	char partial_path[PATH_MAX];
 	struct stat st;
+	char *token;
 
-	// 拷贝路径以避免修改原始路径
+	// 初始化路径变量
 	snprintf(temp, sizeof(temp), "%s", path);
+	partial_path[0] = '\0';  // 初始化为空字符串
 
 	// 逐级检查路径
-	char *token = strtok(temp, "/");
+	token = strtok(temp, "/");
 	while (token != NULL) {
 		// 构建逐级路径
 		if (strlen(partial_path) > 0) {
