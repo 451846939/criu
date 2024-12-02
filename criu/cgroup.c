@@ -1478,6 +1478,8 @@ static int restore_cgroup_prop(const CgroupPropEntry *cg_prop_entry_p, char *pat
 			       bool skip_fails)
 {
 	int cg, fd, exit_code = -1, flag;
+	// 打印路径权限
+	char command[PATH_MAX];
 	CgroupPerms *perms = cg_prop_entry_p->perms;
 	int is_subtree_control = !strcmp(cg_prop_entry_p->name, "cgroup.subtree_control");
 
@@ -1557,10 +1559,15 @@ static int restore_cgroup_prop(const CgroupPropEntry *cg_prop_entry_p, char *pat
 			ret = len;
 		if (ret != len) {
 			pr_perror("Failed writing %s to %s", cg_prop_entry_p->value, path);
-			pr_info("  Path permissions:");
-			system("ls -ld %s", path);  // 打印目标路径的权限
-			pr_info("  Mount options:");
-			system("findmnt %s", path); // 打印挂载点的信息
+
+			snprintf(command, PATH_MAX, "ls -ld %s", path);
+			pr_info("  Path permissions:\n");
+			system(command);  // 打印目标路径的权限
+
+			// 打印挂载点信息
+			snprintf(command, PATH_MAX, "findmnt %s", path);
+			pr_info("  Mount options:\n");
+			system(command);  // 打印挂载点信息
 			// 新增代码：检查 cgroup 路径是否存在
 //			check_parent_directories(path);
 			// 添加此段以打印 /sys/fs/cgroup 的目录结构
