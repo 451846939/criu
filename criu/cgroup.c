@@ -1482,6 +1482,8 @@ static int restore_cgroup_prop(const CgroupPropEntry *cg_prop_entry_p, char *pat
 	FILE *findmnt_fp;
 	char buffer[8192];
 	char abs_path[4096];
+	int cmd_len;
+
 	CgroupPerms *perms = cg_prop_entry_p->perms;
 	int is_subtree_control = !strcmp(cg_prop_entry_p->name, "cgroup.subtree_control");
 
@@ -1569,7 +1571,7 @@ static int restore_cgroup_prop(const CgroupPropEntry *cg_prop_entry_p, char *pat
 
 			// 打印路径权限
 			pr_info("  Path permissions for %s:\n", abs_path);
-			int cmd_len = snprintf(buffer, sizeof(buffer), "ls -ld %s", abs_path);
+			cmd_len = snprintf(buffer, sizeof(buffer), "ls -ld %s", abs_path);
 			if (cmd_len < 0 || cmd_len >= sizeof(buffer)) {
 				pr_err("Command string too long for ls -ld\n");
 			} else {
