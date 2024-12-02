@@ -72,22 +72,36 @@ void check_parent_directories(const char *path);
 
 void check_parent_directories(const char *path) {
 	char temp[PATH_MAX];
+	char *current_path;
 	struct stat st;
 
 	// 拷贝路径以避免修改原始路径
 	snprintf(temp, sizeof(temp), "%s", path);
 
-	// 从路径的最后一级目录开始，逐级检查父目录
-	while (strcmp(temp, "/") != 0) {
-		if (stat(temp, &st) != 0) {
-			pr_perror("Missing directory: %s\n", temp);  // 打印出缺失的目录
+	// 开始逐级检查父目录
+	current_path = temp;
+	while (strcmp(current_path, "/") != 0) {
+		if (stat(current_path, &st) != 0) {
+			pr_perror("Missing directory: %s\n", current_path);  // 打印缺失目录
+		} else {
+			pr_info("Directory exists: %s\n", current_path);  // 打印存在目录
 		}
-		dirname(temp);  // 获取当前目录的父目录路径
+
+		// 获取父目录
+		current_path = dirname(current_path);
+
+		// 如果路径没有变化（防止陷入死循环）
+		if (strcmp(current_path, temp) == 0) {
+			pr_perror("Unexpected error: dirname() returned the same path\n");
+			break;
+		}
 	}
 
-	// 检查根目录（/）
+	// 最后检查根目录
 	if (stat("/", &st) != 0) {
 		pr_perror("Root directory is missing, which is unexpected.\n");
+	} else {
+		pr_info("Root directory exists: /\n");
 	}
 }
 
