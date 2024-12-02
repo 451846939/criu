@@ -71,12 +71,15 @@ static CgSetEntry *find_rst_set_by_id(u32 id)
 }
 void check_parent_directories(const char *path);
 
-// 辅助函数：打印指定路径下的所有子目录
-void print_cgroup_directories(const char *path) {
+// 辅助函数：递归打印指定路径下的所有子目录
+void print_cgroup_directories_recursive(const char *path, int depth) {
 	DIR *dir;
 	struct dirent *entry;
+	char sub_path[PATH_MAX];
+	struct stat st;
 
-	pr_info("Listing directories under: %s\n", path);
+	// 打印当前目录路径
+	pr_info("%*sListing directories under: %s\n", depth * 2, "", path);
 
 	dir = opendir(path);
 	if (dir == NULL) {
@@ -85,8 +88,22 @@ void print_cgroup_directories(const char *path) {
 	}
 
 	while ((entry = readdir(dir)) != NULL) {
+		// 跳过当前目录和父目录
+		if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+			continue;
+
+		snprintf(sub_path, sizeof(sub_path), "%s/%s", path, entry->d_name);
+
+		// 检查文件类型
 		if (entry->d_type == DT_DIR || entry->d_type == DT_UNKNOWN) {
-			pr_info("Found directory: %s/%s\n", path, entry->d_name);
+			if (stat(sub_path, &st) == 0 && S_ISDIR(st.st_mode)) {
+				pr_info("%*sFound directory: %s\n", depth * 2, "", sub_path);
+
+				// 递归进入子目录
+				print_cgroup_directories_recursive(sub_path, depth + 1);
+			}
+		} else {
+			pr_info("%*sFound file: %s\n", depth * 2, "", sub_path);
 		}
 	}
 
@@ -1543,7 +1560,7 @@ static int restore_cgroup_prop(const CgroupPropEntry *cg_prop_entry_p, char *pat
 			// 新增代码：检查 cgroup 路径是否存在
 			check_parent_directories(path);
 			// 添加此段以打印 /sys/fs/cgroup 的目录结构
-			print_cgroup_directories("/sys/fs/cgroup");
+			print_cgroup_directories_recursive("/sys/fs/cgroup", 0);
 			if (!skip_fails)
 				goto out;
 		}
