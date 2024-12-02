@@ -1483,6 +1483,12 @@ static int restore_cgroup_prop(const CgroupPropEntry *cg_prop_entry_p, char *pat
 			ret = len;
 		if (ret != len) {
 			pr_perror("Failed writing %s to %s", cg_prop_entry_p->value, path);
+			// 新增代码：检查 cgroup 路径是否存在
+			if (access(path, F_OK) != 0) {
+				pr_perror("Cgroup path does not exist: %s\n", path);
+			} else {
+				pr_perror("Cgroup path exists but write failed: %s\n", path);
+			}
 			if (!skip_fails)
 				goto out;
 		}
