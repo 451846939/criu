@@ -1478,6 +1478,9 @@ static int restore_cgroup_prop(const CgroupPropEntry *cg_prop_entry_p, char *pat
 			       bool skip_fails)
 {
 	int cg, fd, exit_code = -1, flag;
+	FILE *ls_fp;
+	FILE *findmnt_fp;
+	char buffer[512];
 	CgroupPerms *perms = cg_prop_entry_p->perms;
 	int is_subtree_control = !strcmp(cg_prop_entry_p->name, "cgroup.subtree_control");
 
@@ -1560,9 +1563,9 @@ static int restore_cgroup_prop(const CgroupPropEntry *cg_prop_entry_p, char *pat
 
 			// 打印路径权限
 			pr_info("  Path permissions for %s:\n", path);
-			FILE *ls_fp = popen("ls -ld %s", "r");
+			snprintf(buffer, sizeof(buffer), "ls -ld %s", path);
+			ls_fp = popen(buffer, "r");
 			if (ls_fp) {
-				char buffer[512];
 				while (fgets(buffer, sizeof(buffer), ls_fp) != NULL) {
 					pr_info("%s", buffer);
 				}
@@ -1573,9 +1576,9 @@ static int restore_cgroup_prop(const CgroupPropEntry *cg_prop_entry_p, char *pat
 
 			// 打印挂载点信息
 			pr_info("  Mount options for %s:\n", path);
-			FILE *findmnt_fp = popen("findmnt %s", "r");
+			snprintf(buffer, sizeof(buffer), "findmnt %s", path);
+			findmnt_fp = popen(buffer, "r");
 			if (findmnt_fp) {
-				char buffer[512];
 				while (fgets(buffer, sizeof(buffer), findmnt_fp) != NULL) {
 					pr_info("%s", buffer);
 				}
